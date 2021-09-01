@@ -3,9 +3,12 @@ package models
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type DBModel struct {
@@ -277,4 +280,72 @@ func (m *DBModel) InsertPoll(poll Poll) error {
 
 	// log.Println(poll)
 	return nil
+}
+
+func (m *DBModel) InsertUser(reguser RegUser) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	stmt := `insert into "user" (id, name, email, password) values ($1, $2, $3, $4)`
+
+	_, err := m.DB.ExecContext(ctx, stmt,
+		reguser.ID,
+		reguser.Name,
+		reguser.Email,
+		reguser.Password,
+	)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	log.Println(reguser)
+	return nil
+
+}
+
+func (m *DBModel) GetUserByID(id string) (*RegUser, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select id, name, email, password form "user" where id = $1`
+
+	row := m.DB.QueryRowContext(ctx, query, id)
+
+	var u RegUser
+	err := row.Scan(
+		&u.ID,
+		&u.Name,
+		&u.Email,
+		&u.Password,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &u, nil
+
+}
+
+func (m *DBModel) Authenticate(email, password string) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var id string
+	var hashedPassword string
+
+	row := m.DB.QueryRowContext(ctx, `select id, password from "user" where email = $1`, email)
+	err := row.Scan(&id, &hashedPassword)
+
+	if err != nil {
+		return id, "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		return "0", "", errors.New("incorrect password")
+	} else if err != nil {
+		return "0", "", err
+	}
+
+	return id, hashedPassword, nil
 }

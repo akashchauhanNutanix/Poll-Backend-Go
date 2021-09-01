@@ -121,6 +121,7 @@ func (app *application) createPoll(w http.ResponseWriter, r *http.Request) {
 	poll.PollCategory = *req2
 	// log.Println(poll.PollCategory)
 	err = app.models.DB.InsertPoll(poll)
+	log.Println(err)
 	if err != nil {
 		app.errorJSON(w, err)
 		return
