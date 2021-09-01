@@ -278,7 +278,6 @@ func (m *DBModel) InsertPoll(poll Poll) error {
 		}
 	}
 
-	// log.Println(poll)
 	return nil
 }
 
