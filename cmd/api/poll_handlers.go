@@ -22,12 +22,6 @@ func (app *application) getOnePoll(w http.ResponseWriter, r *http.Request) {
 
 	id := (params.ByName("id"))
 
-	// if err != nil {
-	// 	app.logger.Print(errors.New("invalid id parameter"))
-	// 	app.errorJSON(w, err)
-	// 	return
-	// }
-
 	poll, err := app.models.DB.Get(id)
 
 	err = app.writeJSON(w, http.StatusOK, poll, "poll")
